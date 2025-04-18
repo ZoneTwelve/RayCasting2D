@@ -20,6 +20,7 @@ class HiderHunterEnv:
 
     def reset(self):
         # random pick reset_default or reset_near_by
+        return self.reset_near_by()
         if random.random() < 0.5:
             print("Resetting to default positions")
             return self.reset_default()

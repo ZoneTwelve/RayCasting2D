@@ -13,11 +13,11 @@ def main():
     font = pygame.font.SysFont('consolas', 21)
     clock = pygame.time.Clock()
 
-    env = HiderHunterEnv(map_width=17, map_height=17, num_rays=21, max_steps=-1)
+    env = HiderHunterEnv(map_width=17, map_height=17, num_rays=21)
     input_dim = len(env._get_obs(env.hider, env.hunter))
     n_actions = 7
     ai = DQNAgent(input_dim, n_actions)
-    ai.policy.load_state_dict(torch.load('hunter_dqn.pth', map_location='cpu'))
+    ai.policy.load_state_dict(torch.load('hider_dqn.pth', map_location='cpu'))  # Now load the hider policy!
     ai.policy.eval()
 
     obs_h, obs_t = env.reset()
@@ -26,21 +26,17 @@ def main():
     renderer = Renderer(screen, env.map.width, env.map.height)
 
     while True:
-        dt = clock.tick(60) / 10000.0
-        # --- Get keyboard as human hider action:
-        action_h = get_action_from_keyboard()
-        action_t = ai.select(obs_t, n_actions)
+        dt = clock.tick(60) / 1000.0
+        # Human is now HUNTER
+        action_t = get_action_from_keyboard()     # Human is hunter (tracker)
+        action_h = ai.select(obs_h, n_actions)    # AI is hider (evader)
 
         (next_obs_h, next_obs_t), (r_h, r_t), done = env.step(action_h, action_t)
         obs_h, obs_t = next_obs_h, next_obs_t
-        total_r += r_h
+        total_r += r_t    # Reward for HUNTER (you!)
 
-        # Use agent objects for rendering, not obs arrays
-        hunter_fake = env.hunter  # Player object (for "target" rendering in draw_2d_view)
-        rays_h = env.num_rays
-        # Actually, env.render already does all this!
+        # Camera follows hunter ("your view")
         env.render(renderer, font, extra=f"Reward: {total_r : .1f}")
-
         pygame.display.flip()
         if done:
             pygame.time.wait(700)
