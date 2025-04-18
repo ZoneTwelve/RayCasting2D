@@ -13,7 +13,7 @@ def main():
     font = pygame.font.SysFont('consolas', 21)
     clock = pygame.time.Clock()
 
-    env = HiderHunterEnv(map_width=17, map_height=17, num_rays=21)
+    env = HiderHunterEnv(map_width=17, map_height=17, num_rays=21, max_steps=-1)
     input_dim = len(env._get_obs(env.hider, env.hunter))
     n_actions = 7
     ai = DQNAgent(input_dim, n_actions)
@@ -26,7 +26,7 @@ def main():
     renderer = Renderer(screen, env.map.width, env.map.height)
 
     while True:
-        dt = clock.tick(60) / 1000.0
+        dt = clock.tick(60) / 10000.0
         # --- Get keyboard as human hider action:
         action_h = get_action_from_keyboard()
         action_t = ai.select(obs_t, n_actions)
@@ -54,8 +54,8 @@ def main():
 
 def get_action_from_keyboard():
     keys = pygame.key.get_pressed()
-    if keys[pygame.K_w]: return 0
-    if keys[pygame.K_s]: return 1
+    if keys[pygame.K_w] or keys[pygame.K_UP]: return 0
+    if keys[pygame.K_s] or keys[pygame.K_DOWN]: return 1
     if keys[pygame.K_a]: return 2
     if keys[pygame.K_d]: return 3
     if keys[pygame.K_LEFT]: return 4

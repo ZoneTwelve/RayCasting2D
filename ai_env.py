@@ -9,20 +9,61 @@ from sprite_object import SpriteObject
 from fake_player import FakePlayer
 
 class HiderHunterEnv:
-    def __init__(self, map_width=15, map_height=15, num_rays=15):
+    def __init__(self, map_width=15, map_height=15, num_rays=15, max_steps=300):
         self.map = Map(map_width, map_height)
         self.num_rays = num_rays
-        self.max_steps = 300
+        self.max_steps = max_steps
         self.reset()
 
     def _rand_free_pos(self, avoid=None):
         return self.map.find_random_empty(avoid=avoid)
 
     def reset(self):
+        # random pick reset_default or reset_near_by
+        if random.random() < 0.5:
+            print("Resetting to default positions")
+            return self.reset_default()
+        else:
+            print("Resetting to nearby positions")
+            return self.reset_near_by()
+        
+    def reset_default(self):
         avoid = set()
         h_x, h_y = self._rand_free_pos()
         avoid.add((int(h_x), int(h_y)))
         t_x, t_y = self._rand_free_pos(avoid=avoid)
+        angle1 = random.uniform(0, 2*math.pi)
+        angle2 = random.uniform(0, 2*math.pi)
+        self.hider = Player(h_x, h_y, angle1, PLAYER_RADIUS, 2.5, PLAYER_ROT_SPEED)
+        self.hunter = Player(t_x, t_y, angle2, PLAYER_RADIUS, 2.5, PLAYER_ROT_SPEED)
+        self.steps = 0
+        obs_hider = self._get_obs(self.hider, self.hunter)
+        obs_hunter = self._get_obs(self.hunter, self.hider)
+        return obs_hider, obs_hunter
+    
+    def reset_near_by(self):
+        avoid = set()
+        h_x, h_y = self._rand_free_pos()
+        avoid.add((int(h_x), int(h_y)))
+
+        # Try to place the hunter near the hider
+        def try_nearby(hx, hy):
+            # neighbor offsets: (dx, dy): up, down, left, right, diagonals, etc
+            neighbor_offsets = [(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,-1),(-1,1),(1,1)]
+            random.shuffle(neighbor_offsets)
+            for dx, dy in neighbor_offsets:
+                nx, ny = int(hx+dx), int(hy+dy)
+                if not self.map.is_wall(nx+0.5, ny+0.5) and (nx, ny) != (int(hx), int(hy)):
+                    return nx+0.5, ny+0.5
+            return None
+
+        found = try_nearby(h_x, h_y)
+        if found:
+            t_x, t_y = found
+        else:
+            # fallback to random spawn if all neighbors are blocked
+            t_x, t_y = self._rand_free_pos(avoid=avoid)
+
         angle1 = random.uniform(0, 2*math.pi)
         angle2 = random.uniform(0, 2*math.pi)
         self.hider = Player(h_x, h_y, angle1, PLAYER_RADIUS, 2.5, PLAYER_ROT_SPEED)
@@ -81,6 +122,10 @@ class HiderHunterEnv:
             reward_hider = -20
             reward_hunter = +20
             done = True
+        elif self.max_steps == -1:
+            # continue
+            reward_hider = 0
+            reward_hunter = 0
         elif self.steps >= self.max_steps:
             reward_hider = 5
             reward_hunter = -2

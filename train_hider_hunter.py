@@ -3,7 +3,7 @@ import numpy as np
 from ai_env import HiderHunterEnv
 from ai_models import DQNAgent
 
-def train(num_episodes=2, save_every=80):
+def train(num_episodes=200, save_every=80):
     env = HiderHunterEnv(map_width=13, map_height=13, num_rays=21)
     input_dim = len(env._get_obs(env.hider, env.hunter))
     n_actions = 7
