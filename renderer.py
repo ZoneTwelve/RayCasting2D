@@ -10,7 +10,8 @@ from settings import (
 
 def map_to_screen(mx, my, player):
     """
-    Returns the screen coordinates (sx, sy) for a map cell (mx, my), based on player's pos as camera center
+    Converts a map coordinate (mx, my) to a screen coordinate,
+    centering the camera on the player's position.
     """
     sx = int((mx - player.x) * VIEW_SCALE + SCREEN_WIDTH // 2)
     sy = int((my - player.y) * VIEW_SCALE + SCREEN_HEIGHT // 2)
@@ -28,7 +29,7 @@ class Renderer:
             self.draw_full_map(game_map, player, rays, static_sprites, fake_player)
         else:
             self.draw_rays_and_hits(player, rays)
-            self.draw_visible_objects_by_ray(rays, static_sprites, fake_player)
+            self.draw_visible_objects_by_ray(rays, static_sprites, fake_player, player)
             self.draw_player(player)
         # FPS
         fps_surf = font.render(f"FPS: {int(fps)}", True, (230,230,230))
@@ -45,6 +46,7 @@ class Renderer:
         grid = game_map.get_grid()
         for y, row in enumerate(grid):
             for x, cell in enumerate(row):
+                # Draw each cell at its map location
                 sx, sy = map_to_screen(x + 0.5, y + 0.5, player)
                 rect = pygame.Rect(
                     sx - VIEW_SCALE//2, sy - VIEW_SCALE//2, VIEW_SCALE, VIEW_SCALE)
@@ -76,6 +78,7 @@ class Renderer:
         px, py = SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2
         for ray in rays:
             xend, yend = None, None
+            # Draw up to first hit (object or wall, whichever closer)
             if ray['object_hit'] is not None and (not ray['hit'] or ray['object_hit_distance'] < ray['distance']):
                 xend, yend = ray['object_hit_x'], ray['object_hit_y']
             elif ray['hit']:
@@ -83,15 +86,18 @@ class Renderer:
             if xend is not None and yend is not None:
                 hx, hy = map_to_screen(xend, yend, player)
                 pygame.draw.line(self.surface, COLOR_RAY, (px, py), (hx, hy), 1)
+            # Wall hit marker
             if ray['hit']:
                 hx, hy = map_to_screen(ray['hit_x'], ray['hit_y'], player)
                 pygame.draw.circle(self.surface, COLOR_RAY_HIT, (hx, hy), 5)
+            # Object hit marker
             if ray['object_hit'] is not None and (not ray['hit'] or ray['object_hit_distance'] < ray['distance']):
                 ox, oy = map_to_screen(ray['object_hit_x'], ray['object_hit_y'], player)
                 color = get_obj_color(ray['object_hit'])
                 pygame.draw.circle(self.surface, color, (ox, oy), int(ray['object_hit'].radius * VIEW_SCALE)+2)
 
-    def draw_visible_objects_by_ray(self, rays, sprites, fake_player):
+    def draw_visible_objects_by_ray(self, rays, sprites, fake_player, player):
+        # For each object, if any ray's object_hit is this object, show it.
         visible_sprites = set()
         visible_fake_player = False
         for ray in rays:
@@ -102,9 +108,11 @@ class Renderer:
                 visible_fake_player = True
             else:
                 visible_sprites.add(obj)
+        # Draw sprites
         for obj in visible_sprites:
             sx, sy = map_to_screen(obj.x, obj.y, player)
             pygame.draw.circle(self.surface, COLOR_STATIC_SPRITE, (sx, sy), int(obj.radius * VIEW_SCALE))
+        # Draw fake player
         if visible_fake_player:
             fx, fy = map_to_screen(fake_player.x, fake_player.y, player)
             pygame.draw.circle(self.surface, COLOR_FAKE_PLAYER, (fx, fy), int(fake_player.radius * VIEW_SCALE))
@@ -133,7 +141,6 @@ class Renderer:
 
 def get_obj_color(obj):
     from settings import COLOR_STATIC_SPRITE, COLOR_FAKE_PLAYER
-    from fake_player import FakePlayer
     if hasattr(obj, '__class__') and obj.__class__.__name__ == 'FakePlayer':
         return COLOR_FAKE_PLAYER
     return COLOR_STATIC_SPRITE
