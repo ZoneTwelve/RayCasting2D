@@ -48,9 +48,10 @@ def main():
         fps = clock.get_fps()
         show_map = handle_events(player, game_map, dt, show_map)
         fake_player.update(dt)
+        all_objs = static_sprites + [fake_player]
         rays = raycast_2d(
             player.x, player.y, player.angle,
-            PLAYER_FOV, NUM_RAYS, game_map)
+            PLAYER_FOV, NUM_RAYS, game_map, all_objs)
         renderer.draw_2d_view(
             game_map, player, rays,
             static_sprites, fake_player, font, dt, fps,
