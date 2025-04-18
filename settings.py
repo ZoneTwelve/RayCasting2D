@@ -7,6 +7,7 @@ SCREEN_HEIGHT = 900
 FPS = 60
 
 # --- Map Settings ---
+CORRIDOR_WIDTH = 4
 MAP_WIDTH = 25  # Odd number preferred
 MAP_HEIGHT = 25  # Odd number preferred
 
@@ -20,7 +21,7 @@ PLAYER_ROT_SPEED = math.radians(120)  # Radians per second
 PLAYER_RADIUS = 0.21  # relative to a map cell, for collision
 
 # --- Raycasting Settings ---
-NUM_RAYS = 135  # Number of rays within FOV
+NUM_RAYS = 135 // 2  # Number of rays within FOV
 RAY_MAX_DISTANCE = 16.0  # Cells
 RAY_STEP_SIZE = 0.02  # Cells
 

@@ -1,6 +1,7 @@
 # maze_generator.py
 
 import random
+from settings import CORRIDOR_WIDTH
 
 def generate_maze(width, height):
     """
@@ -35,3 +36,18 @@ def generate_maze(width, height):
             stack.pop()
 
     return maze
+
+def widen_maze(cells, corridor_width=2):
+    """Expands each path cell into a (corridor_width x corridor_width) block."""
+    in_h = len(cells)
+    in_w = len(cells[0])
+    out_h = in_h * corridor_width
+    out_w = in_w * corridor_width
+    out = [['#' for _ in range(out_w)] for _ in range(out_h)]
+    for y in range(in_h):
+        for x in range(in_w):
+            if cells[y][x] == ' ':
+                for dy in range(corridor_width):
+                    for dx in range(corridor_width):
+                        out[y*corridor_width+dy][x*corridor_width+dx] = ' '
+    return out
