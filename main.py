@@ -24,15 +24,11 @@ def main():
 
     # --- Map and Entities ---
     game_map = Map(MAP_WIDTH, MAP_HEIGHT)
-
-    # Player initial position & angle
     px, py = game_map.get_start_pos()
     p_angle = math.radians(35)
     player = Player(
         px, py, p_angle,
         PLAYER_RADIUS, PLAYER_MOVE_SPEED, PLAYER_ROT_SPEED)
-
-    # Static sprites (collectibles or objects)
     num_sprites = max(2, (MAP_WIDTH * MAP_HEIGHT) // 45)
     used = set()
     used.add((int(px), int(py)))
@@ -41,38 +37,34 @@ def main():
         sx, sy = game_map.find_random_empty(avoid=used)
         used.add((int(sx), int(sy)))
         static_sprites.append(SpriteObject(sx, sy, COLOR_STATIC_SPRITE))
-
-    # FakePlayer (wandering NPC)
     fx, fy = game_map.find_random_empty(avoid=used)
     fake_player = FakePlayer(fx, fy, game_map, COLOR_FAKE_PLAYER)
-
-    # Renderer
     renderer = Renderer(screen, MAP_WIDTH, MAP_HEIGHT)
 
-    # --- Game Loop ---
-    while True:
-        dt = clock.tick(FPS) / 1000.0  # Delta time in seconds
-        fps = clock.get_fps()
-        handle_events(player, game_map, dt)
-        fake_player.update(dt)  # Update NPC
+    show_map = False  # Toggle flag
 
-        # Raycasting (per frame)
+    while True:
+        dt = clock.tick(FPS) / 1000.0
+        fps = clock.get_fps()
+        show_map = handle_events(player, game_map, dt, show_map)
+        fake_player.update(dt)
         rays = raycast_2d(
             player.x, player.y, player.angle,
             PLAYER_FOV, NUM_RAYS, game_map)
-
-        # Draw
         renderer.draw_2d_view(
             game_map, player, rays,
-            static_sprites, fake_player, font, dt, fps)
+            static_sprites, fake_player, font, dt, fps,
+            show_full_map=show_map)
         pygame.display.flip()
 
-
-def handle_events(player, game_map, dt):
+def handle_events(player, game_map, dt, show_map):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_m:
+                show_map = not show_map
     keys = pygame.key.get_pressed()
     forward = 0
     strafe = 0
@@ -89,9 +81,9 @@ def handle_events(player, game_map, dt):
         rot -= 1
     if keys[pygame.K_RIGHT]:
         rot += 1
-    # (AD = strafe; Left/Right = turn)
     player.move(forward, strafe, game_map, dt)
     player.rotate(rot, dt)
+    return show_map
 
 if __name__ == "__main__":
     main()
