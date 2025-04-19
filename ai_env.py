@@ -20,14 +20,42 @@ class HiderHunterEnv:
 
     def reset(self):
         # random pick reset_default or reset_near_by
-        return self.reset_near_by()
+        return self.reset_hunter()
         if random.random() < 0.5:
             print("Resetting to default positions")
             return self.reset_default()
         else:
             print("Resetting to nearby positions")
             return self.reset_near_by()
-        
+    def reset_hunter(self):
+        avoid = set()
+        h_x, h_y = self._rand_free_pos()
+        avoid.add((int(h_x), int(h_y)))
+
+        # Hunter spawn near hider
+        def try_nearby(hx, hy):
+            neighbor_offsets = [(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,-1),(-1,1),(1,1)]
+            random.shuffle(neighbor_offsets)
+            for dx, dy in neighbor_offsets:
+                nx, ny = int(hx+dx), int(hy+dy)
+                if not self.map.is_wall(nx+0.5, ny+0.5) and (nx, ny) != (int(hx), int(hy)):
+                    return nx+0.5, ny+0.5
+            return None
+
+        found = try_nearby(h_x, h_y)
+        if found:
+            t_x, t_y = found
+        else:
+            t_x, t_y = self._rand_free_pos(avoid=avoid)
+
+        angle1 = random.uniform(0, 2*math.pi)
+        angle2 = random.uniform(0, 2*math.pi)
+        self.hider = Player(h_x, h_y, angle1, PLAYER_RADIUS, 2.5, PLAYER_ROT_SPEED)
+        self.hunter = Player(t_x, t_y, angle2, PLAYER_RADIUS, 2.5, PLAYER_ROT_SPEED)
+        self.steps = 0
+        obs_hider = self._get_obs(self.hider, self.hunter)
+        obs_hunter = self._get_obs(self.hunter, self.hider)
+        return obs_hider, obs_hunter
     def reset_default(self):
         avoid = set()
         h_x, h_y = self._rand_free_pos()

@@ -2,7 +2,7 @@
 import math
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 800
-FPS = 60
+FPS = 180
 
 CORRIDOR_WIDTH = 4
 MAP_WIDTH = 17
@@ -37,3 +37,7 @@ PLAYER_FOV = math.radians(65)
 PLAYER_MOVE_SPEED = 3.0  # Cells per second
 PLAYER_ROT_SPEED = math.radians(120)  # Radians per second
 PLAYER_RADIUS = 0.21  # relative to a map cell, for collision
+
+# --- Font Settings ---
+FONT_NAME = "consolas"
+FONT_SIZE = 20
